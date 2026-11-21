@@ -3,5 +3,5 @@ from transaction.views import TransactionListCreateView, TransactionRetrieveUpda
 
 urlpatterns = [
     path('transaction/', TransactionListCreateView.as_view(), name='transaction-create-list'),
-    path('transaction/<int:pk>/', TransactionRetrieveUpdateDestroyView.as_view(), name='transactio-detail-view'),
+    path('transaction/<int:pk>/', TransactionRetrieveUpdateDestroyView.as_view(), name='transaction-detail-view'),
 ]

@@ -5,4 +5,15 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CategoryModel
-        fields = "__all__"
+        fields = ["id", "name"]
+
+    def validate_name(self, value):
+        user = self.context["request"].user
+        qs = CategoryModel.objects.filter(user=user, name__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(
+                "Você já tem uma categoria com esse nome."
+            )
+        return value
