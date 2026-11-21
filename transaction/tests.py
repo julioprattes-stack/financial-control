@@ -93,3 +93,38 @@ class FinanceApiTests(APITestCase):
     def test_str_do_lancamento(self):
         self.client.post("/api/v1/transaction/", self.payload(), format="json")
         self.assertEqual(str(TransactionModel.objects.get()), "Compras (50.00)")
+
+    # ---- contas ----
+    def test_cria_conta_com_dono_definido_pelo_servidor(self):
+        resp = self.client.post(
+            "/api/v1/account/",
+            {"name": "Nubank", "type": "checking", "initial_balance": "1500.00"},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(AccountModel.objects.get(name="Nubank", user=self.ana).user, self.ana)
+
+    def test_usuario_so_ve_as_proprias_contas(self):
+        resp = self.client.get("/api/v1/account/")
+        self.assertEqual(resp.data, [])
+        resp = self.client.get(f"/api/v1/account/{self.acc_bia.id}/")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_conta_com_nome_repetido_retorna_400(self):
+        self.client.post(
+            "/api/v1/account/", {"name": "Nubank", "type": "cash"}, format="json"
+        )
+        resp = self.client.post(
+            "/api/v1/account/", {"name": "nubank", "type": "cash"}, format="json"
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_apagar_conta_com_lancamentos_retorna_409(self):
+        conta = self.client.post(
+            "/api/v1/account/", {"name": "Itaú", "type": "checking"}, format="json"
+        ).data["id"]
+        self.client.post(
+            "/api/v1/transaction/", self.payload(account=conta), format="json"
+        )
+        resp = self.client.delete(f"/api/v1/account/{conta}/")
+        self.assertEqual(resp.status_code, 409)
